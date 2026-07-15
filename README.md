@@ -7,7 +7,7 @@ git clone git@github.com:aqua2k1/agent-setup.git ~/.agent
 ```
 
 ```bash
-git clone --depth=1 https://github.com/aqua2k1/pi-setup.git ~/.agent
+git clone --depth=1 https://github.com/aqua2k1/agent-setup.git ~/.agent
 ```
 
 ## Skills
