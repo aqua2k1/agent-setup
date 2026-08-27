@@ -1,0 +1,44 @@
+{
+  "version": 3,
+  "skills": {
+    "imagegen": {
+      "source": "openai/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/openai/skills.git",
+      "skillPath": "skills/.system/imagegen/SKILL.md",
+      "skillFolderHash": "96f7cd3935ddac7f2c2f3ca65f61325f059e2dd1",
+      "installedAt": "2026-08-27T07:40:56.140Z",
+      "updatedAt": "2026-08-27T07:40:56.140Z"
+    },
+    "ppt-master": {
+      "source": "hugohe3/ppt-master",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/hugohe3/ppt-master.git",
+      "skillPath": "skills/ppt-master/SKILL.md",
+      "skillFolderHash": "b0a3f9db7bd8f1e214f35a65bdbf8e390a160eee",
+      "installedAt": "2026-08-27T07:43:50.398Z",
+      "updatedAt": "2026-08-27T07:43:50.398Z"
+    },
+    "skill-creator": {
+      "source": "openai/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/openai/skills.git",
+      "skillPath": "skills/.system/skill-creator/SKILL.md",
+      "skillFolderHash": "8bfb6b8774d223eea3e788cfdfa1e4209e5e2ae9",
+      "installedAt": "2026-08-27T07:52:52.987Z",
+      "updatedAt": "2026-08-27T07:52:52.987Z"
+    },
+    "cli-creator": {
+      "source": "openai/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/openai/skills.git",
+      "skillPath": "skills/.curated/cli-creator/SKILL.md",
+      "skillFolderHash": "4f534f22c18693e327ea79e6d429f454a5c0059b",
+      "installedAt": "2026-08-27T07:53:05.208Z",
+      "updatedAt": "2026-08-27T07:53:05.208Z"
+    }
+  },
+  "dismissed": {
+    "findSkillsPrompt": true
+  }
+}

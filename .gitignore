@@ -1,0 +1,17 @@
+# 忽略 skills 下所有内容
+/skills/*
+
+# 保留自己的 Skill 分类
+!/skills/m/
+!/skills/m/**
+
+!/skills/u/
+!/skills/u/**
+
+# 通用缓存
+**/__pycache__/
+**/*.py[cod]
+**/.DS_Store
+**/node_modules/
+**/.venv/
+**/venv/
