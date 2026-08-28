@@ -76,6 +76,24 @@
       "pluginName": "mattpocock-skills",
       "installedAt": "2026-08-28T04:12:57.157Z",
       "updatedAt": "2026-08-28T04:12:57.157Z"
+    },
+    "archify": {
+      "source": "tt-a1i/archify",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/tt-a1i/archify.git",
+      "skillPath": "archify/SKILL.md",
+      "skillFolderHash": "0e85b87a70c4f9be67f8017eaa591b9e836d0337",
+      "installedAt": "2026-08-28T04:23:05.004Z",
+      "updatedAt": "2026-08-28T04:23:05.004Z"
+    },
+    "simplify-codebase": {
+      "source": "tt-a1i/simplify-codebase",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/tt-a1i/simplify-codebase.git",
+      "skillPath": "SKILL.md",
+      "skillFolderHash": "add872f3db2a96f90081bedc070dde5d723afa95",
+      "installedAt": "2026-08-28T04:24:31.513Z",
+      "updatedAt": "2026-08-28T04:24:31.513Z"
     }
   },
   "dismissed": {
