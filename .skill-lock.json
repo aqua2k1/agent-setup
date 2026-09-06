@@ -15,9 +15,9 @@
       "sourceType": "github",
       "sourceUrl": "https://github.com/hugohe3/ppt-master.git",
       "skillPath": "skills/ppt-master/SKILL.md",
-      "skillFolderHash": "b0a3f9db7bd8f1e214f35a65bdbf8e390a160eee",
+      "skillFolderHash": "23670408c47add870a8f07400acdbfd408cd0b7a",
       "installedAt": "2026-08-27T07:43:50.398Z",
-      "updatedAt": "2026-08-27T07:43:50.398Z"
+      "updatedAt": "2026-09-06T09:32:58.548Z"
     },
     "skill-creator": {
       "source": "openai/skills",
@@ -26,7 +26,7 @@
       "skillPath": "skills/.system/skill-creator/SKILL.md",
       "skillFolderHash": "8bfb6b8774d223eea3e788cfdfa1e4209e5e2ae9",
       "installedAt": "2026-08-27T07:52:52.987Z",
-      "updatedAt": "2026-08-27T07:52:52.987Z"
+      "updatedAt": "2026-09-06T09:33:02.562Z"
     },
     "cli-creator": {
       "source": "openai/skills",
@@ -35,7 +35,7 @@
       "skillPath": "skills/.curated/cli-creator/SKILL.md",
       "skillFolderHash": "4f534f22c18693e327ea79e6d429f454a5c0059b",
       "installedAt": "2026-08-27T07:53:05.208Z",
-      "updatedAt": "2026-08-27T07:53:05.208Z"
+      "updatedAt": "2026-09-06T09:33:06.786Z"
     },
     "teach": {
       "source": "mattpocock/skills",
@@ -45,7 +45,7 @@
       "skillFolderHash": "2ab11f2f51f3c29771edb5d4258d807a49462491",
       "pluginName": "mattpocock-skills",
       "installedAt": "2026-08-28T04:00:34.481Z",
-      "updatedAt": "2026-08-28T04:00:34.481Z"
+      "updatedAt": "2026-09-06T09:33:10.188Z"
     },
     "grill-with-docs": {
       "source": "mattpocock/skills",
@@ -55,7 +55,7 @@
       "skillFolderHash": "eedaf2562c83155115e9c649fa3ecaac2e10e81d",
       "pluginName": "mattpocock-skills",
       "installedAt": "2026-08-28T04:10:15.086Z",
-      "updatedAt": "2026-08-28T04:10:15.086Z"
+      "updatedAt": "2026-09-06T09:33:13.257Z"
     },
     "grilling": {
       "source": "mattpocock/skills",
@@ -65,7 +65,7 @@
       "skillFolderHash": "f0732035b8b1b60ae39454e4191caef32fa91903",
       "pluginName": "mattpocock-skills",
       "installedAt": "2026-08-28T04:11:41.187Z",
-      "updatedAt": "2026-08-28T04:11:41.187Z"
+      "updatedAt": "2026-09-06T09:33:16.201Z"
     },
     "domain-modeling": {
       "source": "mattpocock/skills",
@@ -75,25 +75,25 @@
       "skillFolderHash": "388c9822641805ca2dcd5038e68a1d5282437ee5",
       "pluginName": "mattpocock-skills",
       "installedAt": "2026-08-28T04:12:57.157Z",
-      "updatedAt": "2026-08-28T04:12:57.157Z"
+      "updatedAt": "2026-09-06T09:33:19.229Z"
     },
     "archify": {
       "source": "tt-a1i/archify",
       "sourceType": "github",
       "sourceUrl": "https://github.com/tt-a1i/archify.git",
       "skillPath": "archify/SKILL.md",
-      "skillFolderHash": "0e85b87a70c4f9be67f8017eaa591b9e836d0337",
+      "skillFolderHash": "6e054b8bfc96784cd2e5a1cfc31dfa0e3b352bc1",
       "installedAt": "2026-08-28T04:23:05.004Z",
-      "updatedAt": "2026-08-28T04:23:05.004Z"
+      "updatedAt": "2026-09-06T09:33:26.666Z"
     },
     "simplify-codebase": {
       "source": "tt-a1i/simplify-codebase",
       "sourceType": "github",
       "sourceUrl": "https://github.com/tt-a1i/simplify-codebase.git",
       "skillPath": "SKILL.md",
-      "skillFolderHash": "add872f3db2a96f90081bedc070dde5d723afa95",
+      "skillFolderHash": "5da55efcb52db690e7406f06f827a23b15da2706",
       "installedAt": "2026-08-28T04:24:31.513Z",
-      "updatedAt": "2026-08-28T04:24:31.513Z"
+      "updatedAt": "2026-09-06T09:33:29.798Z"
     }
   },
   "dismissed": {
