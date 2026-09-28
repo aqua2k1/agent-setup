@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "entries": {
+    "archify": {
+      "source": "tt-a1i/archify/archify",
+      "repo_url": "https://github.com/tt-a1i/archify.git",
+      "subdir": "archify"
+    },
+    "domain-modeling": {
+      "source": "mattpocock/skills/skills/engineering/domain-modeling",
+      "repo_url": "https://github.com/mattpocock/skills.git",
+      "subdir": "skills/engineering/domain-modeling"
+    },
+    "grill-with-docs": {
+      "source": "mattpocock/skills/skills/engineering/grill-with-docs",
+      "repo_url": "https://github.com/mattpocock/skills.git",
+      "subdir": "skills/engineering/grill-with-docs"
+    },
+    "grilling": {
+      "source": "mattpocock/skills/skills/productivity/grilling",
+      "repo_url": "https://github.com/mattpocock/skills.git",
+      "subdir": "skills/productivity/grilling"
+    },
+    "math-modeling-skill": {
+      "source": "XiaoMaColtAI/math-modeling-skill",
+      "repo_url": "https://github.com/XiaoMaColtAI/math-modeling-skill.git"
+    },
+    "ppt-master": {
+      "source": "hugohe3/ppt-master/skills/ppt-master",
+      "repo_url": "https://github.com/hugohe3/ppt-master.git",
+      "subdir": "skills/ppt-master"
+    },
+    "simplify-codebase": {
+      "source": "tt-a1i/simplify-codebase",
+      "repo_url": "https://github.com/tt-a1i/simplify-codebase.git"
+    },
+    "skill-creator": {
+      "source": "openai/skills/skills/.system/skill-creator",
+      "repo_url": "https://github.com/openai/skills.git",
+      "subdir": "skills/.system/skill-creator"
+    }
+  }
+}

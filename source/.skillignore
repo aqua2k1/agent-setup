@@ -1,0 +1,3 @@
+# Only directories directly under this source are deployable skills.
+# Nested SKILL.md files belong to bundled reference material, not separate skills.
+/*/*/

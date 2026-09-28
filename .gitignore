@@ -1,12 +1,10 @@
-# 忽略 skills 下所有内容
-/skills/*
+# skillshare 的 universal 目标链接不入库
+/skills/
 
-# 保留自己的 Skill 分类
-!/skills/m/
-!/skills/m/**
-
-!/skills/u/
-!/skills/u/**
+# 远程 skill 由 source/.metadata.json 记录来源，各设备自行下载
+/source/*/
+# 只有自建 skill 保存实体；新增自建 skill 时须在此添加例外
+!/source/comfyui-imagegen/
 
 # 通用缓存
 **/__pycache__/
