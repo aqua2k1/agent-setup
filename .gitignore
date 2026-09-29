@@ -1,15 +1,16 @@
-# skillshare 的 universal 目标链接不入库
-/skills/
-
-# 远程 skill 由 source/.metadata.json 记录来源，各设备自行下载
-/source/*/
-# 只有自建 skill 保存实体；新增自建 skill 时须在此添加例外
-!/source/comfyui-imagegen/
-
-# 通用缓存
+# Runtime state and build/test artifacts
+/.state/
+/dist/
+.pytest_cache/
+*.egg-info/
 **/__pycache__/
 **/*.py[cod]
 **/.DS_Store
 **/node_modules/
 **/.venv/
 **/venv/
+# BEGIN skillctl managed skills
+!/skills/
+/skills/*
+!/skills/comfyui-imagegen/
+# END skillctl managed skills
