@@ -78,6 +78,14 @@ def test_fetch_rejects_invalid_source_or_ref(repository, tmp_path, repo, ref):
         fetch_skill(SkillSpec(str(repository) if repo == "/tmp/anything" else repo, "catalog/demo", ref), workspace)
 
 
+def test_fetch_rejects_invalid_spec_before_touching_workspace(tmp_path):
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    with pytest.raises(SkillError, match="Invalid skill specification"):
+        fetch_skill({}, workspace)
+    assert list(workspace.iterdir()) == []
+
+
 def test_fetch_rejects_symlinks_submodules_and_invalid_metadata(repository, tmp_path):
     source = skill_dir(repository)
     (source / "linked").symlink_to(source / "SKILL.md")

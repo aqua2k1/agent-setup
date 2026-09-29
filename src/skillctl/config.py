@@ -1,9 +1,8 @@
 """Read and write the skill registry without losing retained TOML comments."""
 
 import os
-import re
 import tempfile
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import Mapping
 
 import tomlkit
@@ -11,24 +10,10 @@ from tomlkit.exceptions import TOMLKitError
 from tomlkit.items import InlineTable, Table
 
 from .contracts import SkillError, SkillSpec
+# Retain config.valid_name / config.valid_path for existing callers.
+from .validation import validate_spec, valid_name, valid_path
 
-_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 _FIELDS = frozenset({"name", "repo", "path", "ref", "frontmatter"})
-
-
-def valid_name(name: object) -> bool:
-    return isinstance(name, str) and len(name) <= 64 and _NAME.fullmatch(name) is not None
-
-
-def valid_path(path: object) -> bool:
-    return (
-        isinstance(path, str)
-        and bool(path)
-        and "\\" not in path
-        and "\x00" not in path
-        and not PurePosixPath(path).is_absolute()
-        and ".." not in path.split("/")
-    )
 
 
 def _plain(value):
@@ -49,26 +34,6 @@ def _same_value(left, right) -> bool:
     return type(left) is type(right) and left == right
 
 
-def _validate_spec(name: str, spec: SkillSpec) -> None:
-    if not valid_name(name):
-        raise SkillError(f"Invalid skill name: {name!r}")
-    if not isinstance(spec, SkillSpec):
-        raise SkillError(f"Invalid specification for {name!r}")
-    if not isinstance(spec.repo, str) or not spec.repo.strip():
-        raise SkillError(f"Invalid repository for {name!r}")
-    if not valid_path(spec.path):
-        raise SkillError(f"Invalid path for {name!r}")
-    if spec.ref is not None and (not isinstance(spec.ref, str) or not spec.ref):
-        raise SkillError(f"Invalid ref for {name!r}")
-    if spec.repo == "local" and (spec.path != "." or spec.ref is not None):
-        raise SkillError(f"Local skill {name!r} cannot specify a Git path or ref")
-    if not isinstance(spec.frontmatter, Mapping):
-        raise SkillError(f"Invalid frontmatter for {name!r}")
-    for key in spec.frontmatter:
-        if not isinstance(key, str):
-            raise SkillError(f"Invalid frontmatter override for {name!r}: {key!r}")
-
-
 def _parse(document: object) -> dict[str, SkillSpec]:
     if not isinstance(document, Mapping) or set(document) - {"skills"}:
         raise SkillError("Configuration must contain only a skills array")
@@ -80,22 +45,17 @@ def _parse(document: object) -> dict[str, SkillSpec]:
         if not isinstance(entry, Mapping):
             raise SkillError("Each skills entry must be a TOML table")
         name = entry.get("name")
-        if not valid_name(name):
-            raise SkillError(f"Invalid or missing skill name: {name!r}")
-        if name in result:
-            raise SkillError(f"Duplicate skill name: {name!r}")
         if set(entry) - _FIELDS:
             raise SkillError(f"Unknown fields in skill {name!r}")
-        frontmatter = entry.get("frontmatter", {})
-        if not isinstance(frontmatter, Mapping):
-            raise SkillError(f"Invalid frontmatter for {name!r}")
         spec = SkillSpec(
             repo=entry.get("repo"),
             path=entry.get("path", "."),
             ref=entry.get("ref"),
-            frontmatter=_plain(frontmatter),
+            frontmatter=_plain(entry.get("frontmatter", {})),
         )
-        _validate_spec(name, spec)
+        validate_spec(name, spec)
+        if name in result:
+            raise SkillError(f"Duplicate skill name: {name!r}")
         result[name] = spec
     return result
 
@@ -119,7 +79,7 @@ def save_config(path: Path, specs: Mapping[str, SkillSpec]) -> None:
     try:
         desired = dict(specs)
         for name, spec in desired.items():
-            _validate_spec(name, spec)
+            validate_spec(name, spec)
         document = _read_document(path)
         _parse(document)  # Never silently discard malformed existing configuration.
         retained = {

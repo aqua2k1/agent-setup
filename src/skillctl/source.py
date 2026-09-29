@@ -8,11 +8,10 @@ import subprocess
 import tempfile
 import time
 from pathlib import Path
-from urllib.parse import urlsplit
 
-from .config import valid_path
 from .contracts import FetchedSkill, InvalidSkill, SkillError, SkillSpec
 from .render import skill_name
+from .validation import validate_fetch_spec
 
 _TIMEOUT = 60
 _MAX_OUTPUT = 8 * 1024 * 1024
@@ -22,66 +21,6 @@ _MAX_TREE = 128 * 1024 * 1024
 # Keep byte/depth limits in addition to this metadata-count bound.
 _MAX_ENTRIES = 20000
 _HEX = re.compile(r"[0-9a-fA-F]{40}(?:[0-9a-fA-F]{24})?\Z")
-_SCP = re.compile(r"(?:[a-zA-Z0-9_.-]+@)?[a-zA-Z0-9_.-]+:[^\s]+\Z")
-
-
-def _repository(repo: str) -> str:
-    if not isinstance(repo, str) or not repo or "\x00" in repo or any(ord(c) < 32 for c in repo):
-        raise SkillError("Invalid repository URL")
-    if repo.startswith("/"):
-        return repo
-    if repo.startswith("-"):
-        raise SkillError("Option-like repository URL")
-    if "://" not in repo:
-        if _SCP.fullmatch(repo):
-            host, remote_path = repo.split(":", 1)
-            if (
-                host.split("@")[-1].startswith("-")
-                or remote_path.startswith(("-", ":"))
-                or re.fullmatch(r"[A-Za-z0-9_./~+-]+", remote_path) is None
-            ):
-                raise SkillError("Unsafe SSH repository")
-            return repo
-        raise SkillError("Unsupported repository URL")
-    try:
-        url = urlsplit(repo)
-        if url.scheme not in {"https", "ssh"} or not url.hostname or not url.path:
-            raise ValueError("Unsupported repository URL")
-        if url.hostname.startswith("-") or url.query or url.fragment:
-            raise ValueError("Invalid repository URL")
-        if url.port is not None and not 1 <= url.port <= 65535:
-            raise ValueError("Invalid port")
-        if url.path.lstrip("/").startswith("-"):
-            raise ValueError("Option-like repository path")
-        if url.scheme == "ssh" and (
-            url.password is not None
-            or (url.username is not None and re.fullmatch(r"[A-Za-z0-9_.-]+", url.username) is None)
-            or re.fullmatch(r"/[A-Za-z0-9_./~+-]+", url.path) is None
-        ):
-            raise ValueError("Unsafe SSH repository")
-    except ValueError as exc:
-        raise SkillError(f"Invalid repository URL: {exc}") from exc
-    return repo
-
-
-def _ref(ref: str | None) -> str:
-    if ref is None:
-        return "HEAD"
-    if not isinstance(ref, str) or not ref or ref.startswith("-"):
-        raise SkillError("Invalid Git ref")
-    if _HEX.fullmatch(ref):
-        return ref
-    # Leave legal Unicode and punctuation to Git's own refname validator; reject
-    # refspec/revision operators and option-like refs before invoking Git.
-    if (
-        any(ord(char) < 33 or ord(char) == 127 for char in ref)
-        or any(char in ref for char in ":~^?*[\\")
-        or "@{" in ref
-        or ref == "@"
-        or (ref.startswith("refs/") and not ref.startswith(("refs/heads/", "refs/tags/")))
-    ):
-        raise SkillError("Invalid Git ref")
-    return ref
 
 
 def _git(args: list[str], directory: Path, limit: int = _MAX_OUTPUT, allow_file: bool = False) -> bytes:
@@ -205,12 +144,7 @@ def _extract(tree: str, destination: Path, gitdir: Path) -> None:
 
 def fetch_skill(spec: SkillSpec, workspace: Path) -> FetchedSkill:
     """Fetch one subtree into an empty caller-owned workspace; never check it out."""
-    if not isinstance(spec, SkillSpec):
-        raise SkillError("Invalid skill specification")
-    repo = _repository(spec.repo)
-    ref = _ref(spec.ref)
-    if not valid_path(spec.path):
-        raise SkillError("Invalid skill subpath")
+    repo, ref = validate_fetch_spec(spec)
     try:
         if workspace.is_symlink() or not workspace.is_dir() or any(workspace.iterdir()):
             raise SkillError("Workspace must be an existing empty directory")

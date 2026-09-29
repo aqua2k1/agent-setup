@@ -6,7 +6,6 @@ import fcntl
 import json
 import os
 from pathlib import Path
-import re
 import shutil
 import stat
 import tempfile
@@ -18,17 +17,11 @@ from .gitignore import sync_gitignore
 from .render import render_skill, skill_name
 from .source import fetch_skill
 from .store import install_skill, tree_hash
-
-_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
+from .validation import require_name
 
 
 def default_home() -> Path:
     return Path(os.environ.get("SKILLCTL_HOME", "~/.agents")).expanduser().resolve()
-
-
-def _name(name: str) -> None:
-    if not isinstance(name, str) or len(name) > 64 or not _NAME.fullmatch(name):
-        raise SkillError(f"Invalid skill name: {name!r}")
 
 
 def _reject_link(path: Path) -> None:
@@ -94,7 +87,7 @@ def _state(home: Path) -> dict:
         ):
             raise ValueError("invalid state schema")
         for name, item in value["skills"].items():
-            _name(name)
+            require_name(name)
             git_record = (
                 isinstance(item, dict)
                 and set(item) == {"commit", "hash"}

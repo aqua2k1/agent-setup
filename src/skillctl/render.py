@@ -7,13 +7,15 @@ from typing import Mapping
 from ruamel.yaml import YAML
 from ruamel.yaml.error import YAMLError
 
-from .config import valid_name
-from .contracts import InvalidSkill, SkillError
+from .contracts import InvalidSkill
+from .validation import (
+    validate_frontmatter, validate_markdown, validate_metadata,
+    validate_original_name, validate_overrides,
+)
 
 
 def _split(markdown: str) -> tuple[str, str, str, str]:
-    if not isinstance(markdown, str):
-        raise InvalidSkill("Skill markdown must be text")
+    validate_markdown(markdown)
     bom = "\ufeff" if markdown.startswith("\ufeff") else ""
     text = markdown[len(bom):]
     lines = text.splitlines(keepends=True)
@@ -33,17 +35,8 @@ def _frontmatter(markdown: str):
         metadata = yaml.load(yaml_text)
     except (YAMLError, ValueError, TypeError) as exc:
         raise InvalidSkill(f"Invalid YAML frontmatter: {exc}") from exc
-    if not isinstance(metadata, Mapping):
-        raise InvalidSkill("Skill frontmatter must be a mapping")
+    validate_frontmatter(metadata)
     return bom, opening, metadata, tail, yaml
-
-
-def _validate_metadata(metadata: Mapping) -> None:
-    if not valid_name(metadata.get("name")):
-        raise InvalidSkill("Skill frontmatter needs a valid name")
-    description = metadata.get("description")
-    if not isinstance(description, str) or not description.strip() or len(description) > 1024:
-        raise InvalidSkill("Skill frontmatter needs a nonblank description (max 1024 characters)")
 
 
 def _yaml_value(value):
@@ -77,24 +70,16 @@ def _same_value(left, right) -> bool:
 
 def render_skill(markdown: str, overrides: Mapping[str, object]) -> str:
     """Replace complete frontmatter fields, keeping the body byte-for-byte intact."""
-    if not isinstance(overrides, Mapping):
-        raise SkillError("Frontmatter overrides must be a mapping")
-    for key in overrides:
-        if not isinstance(key, str):
-            raise SkillError(f"Invalid frontmatter override: {key!r}")
+    validate_overrides(overrides)
     bom, opening, metadata, tail, yaml = _frontmatter(markdown)
-    original_name = metadata.get("name")
-    if not valid_name(original_name):
-        raise InvalidSkill("Skill frontmatter needs a valid name")
-    if "name" in overrides and overrides["name"] != original_name:
-        raise InvalidSkill("Frontmatter override cannot change the skill name")
+    validate_original_name(metadata, overrides)
     changes = {}
     for key, value in overrides.items():
         converted = _yaml_value(value)
         if key not in metadata or not _same_value(metadata[key], converted):
             changes[key] = converted
     metadata.update(changes)
-    _validate_metadata(metadata)
+    validate_metadata(metadata)
     if not changes:
         return markdown
     output = StringIO()
@@ -111,5 +96,5 @@ def render_skill(markdown: str, overrides: Mapping[str, object]) -> str:
 def skill_name(markdown: str) -> str:
     """Validate a skill and return its declared name."""
     metadata = _frontmatter(markdown)[2]
-    _validate_metadata(metadata)
+    validate_metadata(metadata)
     return metadata["name"]

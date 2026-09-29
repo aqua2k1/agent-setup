@@ -6,8 +6,8 @@ from pathlib import Path
 import stat
 import tempfile
 
-from .config import valid_name
 from .contracts import SkillError
+from .validation import validate_local_names
 
 _BEGIN = "# BEGIN skillctl managed skills"
 _END = "# END skillctl managed skills"
@@ -16,8 +16,7 @@ _END = "# END skillctl managed skills"
 def sync_gitignore(home: Path, local_names: Iterable[str]) -> bool:
     """Update only the managed block, preserving handwritten rules and file mode."""
     names = list(local_names)
-    if any(not valid_name(name) for name in names):
-        raise SkillError("Invalid local skill name for .gitignore")
+    validate_local_names(names)
     rules = [_BEGIN, "!/skills/", "/skills/*"]
     rules.extend(f"!/skills/{name}/" for name in sorted(set(names)))
     block = "\n".join([*rules, _END]) + "\n"

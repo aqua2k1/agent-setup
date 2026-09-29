@@ -4,7 +4,8 @@ from datetime import date, datetime, time, timezone
 import pytest
 from ruamel.yaml import YAML
 
-from skillctl.config import load_config, save_config
+from skillctl.config import load_config, save_config, valid_name, valid_path
+from skillctl.validation import valid_name as central_valid_name, valid_path as central_valid_path
 from skillctl.contracts import SkillError, SkillSpec
 from skillctl.render import render_skill, skill_name
 
@@ -28,6 +29,21 @@ def test_config_missing_roundtrip_and_defaults(tmp_path):
     assert load_config(path) == specs
     path.write_text('[[skills]]\nname = "demo"\nrepo = "/tmp/repository"\n', encoding="utf-8")
     assert load_config(path) == {"demo": SkillSpec("/tmp/repository")}
+
+
+def test_validation_helpers_remain_available_from_config():
+    assert valid_name is central_valid_name
+    assert valid_path is central_valid_path
+    assert valid_path("catalog//./demo")
+    for path in ("/catalog/demo", "catalog/../demo", "catalog\\demo", "catalog\x00demo"):
+        assert not valid_path(path)
+
+
+def test_config_preserves_unmodified_string_subpath(tmp_path):
+    path = tmp_path / "config.toml"
+    spec = SkillSpec("/tmp/repository", "catalog//./demo")
+    save_config(path, {"demo": spec})
+    assert load_config(path)["demo"].path == spec.path
 
 
 def test_local_config_roundtrip_and_defaults(tmp_path):
@@ -92,6 +108,10 @@ def test_legacy_mapping_config_is_rejected(tmp_path):
         f'[[skills]]\nname = {"a" * 65!r}\nrepo = "/tmp/x"\n',
         '[[skills]]\nrepo = "/tmp/x"\n',
         '[[skills]]\nname = 1\nrepo = "/tmp/x"\n',
+        '[[skills]]\nname = []\nrepo = "/tmp/x"\n',
+        '[[skills]]\nname = {}\nrepo = "/tmp/x"\n',
+        '[[skills]]\nname = "demo"\nrepo = "local"\nfrontmatter = []\n',
+        '[[skills]]\nname = "demo"\nrepo = "local"\nfrontmatter = "invalid"\n',
         '[[skills]]\nname = "demo"\nrepo = "/tmp/x"\n[[skills]]\nname = "demo"\nrepo = "/tmp/y"\n',
         'skills = [1]\n',
         'skills = ["demo"]\n',
@@ -114,6 +134,21 @@ def test_bad_config_is_rejected(tmp_path, text):
     path.write_text(text, encoding="utf-8")
     with pytest.raises(SkillError):
         load_config(path)
+
+
+@pytest.mark.parametrize("specs", [
+    {"demo": {}},
+    {"Bad": SkillSpec("local")},
+    {"demo": SkillSpec("local", frontmatter=[])},
+    {"demo": SkillSpec("local", frontmatter={1: "invalid"})},
+])
+def test_save_rejects_invalid_inputs_without_changing_config(tmp_path, specs):
+    path = tmp_path / "config.toml"
+    save_config(path, {"demo": SkillSpec("local")})
+    original = path.read_bytes()
+    with pytest.raises(SkillError):
+        save_config(path, specs)
+    assert path.read_bytes() == original
 
 
 def test_save_distinguishes_bool_from_number_in_nested_frontmatter(tmp_path):
