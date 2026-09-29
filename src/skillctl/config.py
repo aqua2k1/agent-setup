@@ -9,11 +9,11 @@ from typing import Mapping
 import tomlkit
 from tomlkit.exceptions import TOMLKitError
 from tomlkit.items import InlineTable, Table
+
 from .contracts import SkillError, SkillSpec
 
 _NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 _FIELDS = frozenset({"name", "repo", "path", "ref", "frontmatter"})
-_OVERRIDE = "disable-model-invocation"
 
 
 def valid_name(name: object) -> bool:
@@ -31,6 +31,24 @@ def valid_path(path: object) -> bool:
     )
 
 
+def _plain(value):
+    """Unwrap TOMLKit containers and scalars, including nested fields."""
+    return value.unwrap() if hasattr(value, "unwrap") else value
+
+
+def _same_value(left, right) -> bool:
+    left, right = _plain(left), _plain(right)
+    if isinstance(left, Mapping) and isinstance(right, Mapping):
+        return left.keys() == right.keys() and all(
+            _same_value(left[key], right[key]) for key in left
+        )
+    if isinstance(left, list) and isinstance(right, list):
+        return len(left) == len(right) and all(
+            _same_value(a, b) for a, b in zip(left, right)
+        )
+    return type(left) is type(right) and left == right
+
+
 def _validate_spec(name: str, spec: SkillSpec) -> None:
     if not valid_name(name):
         raise SkillError(f"Invalid skill name: {name!r}")
@@ -46,8 +64,8 @@ def _validate_spec(name: str, spec: SkillSpec) -> None:
         raise SkillError(f"Local skill {name!r} cannot specify a Git path or ref")
     if not isinstance(spec.frontmatter, Mapping):
         raise SkillError(f"Invalid frontmatter for {name!r}")
-    for key, value in spec.frontmatter.items():
-        if key != _OVERRIDE or type(value) is not bool:
+    for key in spec.frontmatter:
+        if not isinstance(key, str):
             raise SkillError(f"Invalid frontmatter override for {name!r}: {key!r}")
 
 
@@ -75,7 +93,7 @@ def _parse(document: object) -> dict[str, SkillSpec]:
             repo=entry.get("repo"),
             path=entry.get("path", "."),
             ref=entry.get("ref"),
-            frontmatter=dict(frontmatter),
+            frontmatter=_plain(frontmatter),
         )
         _validate_spec(name, spec)
         result[name] = spec
@@ -151,7 +169,7 @@ def save_config(path: Path, specs: Mapping[str, SkillSpec]) -> None:
                     if key not in spec.frontmatter:
                         del overrides[key]
                 for key, value in spec.frontmatter.items():
-                    if key not in overrides or overrides[key] is not value:
+                    if key not in overrides or not _same_value(overrides[key], value):
                         overrides[key] = value
             skills.append(entry)
         document["skills"] = skills if names else tomlkit.array()

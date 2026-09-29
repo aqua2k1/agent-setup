@@ -22,7 +22,7 @@ class SkillSpec:
     repo: str
     path: str = "."
     ref: str | None = None
-    frontmatter: Mapping[str, bool] = field(default_factory=dict)
+    frontmatter: Mapping[str, object] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -66,7 +66,8 @@ ProgressCallback = Callable[[ProgressEvent], None]
 #   document root. Empty document or skills=[] is valid as {}. Nonempty skills
 #   arrays must contain mappings. Reject missing/invalid name before mutation.
 #   Names: lowercase letters/digits separated by single hyphens, <=64 chars.
-#   Frontmatter only accepts disable-model-invocation with a bool value.
+#   Frontmatter accepts arbitrary TOML keys/values, recursively converted to
+#   plain Python values (including nested arrays/maps and date/time types).
 #   Invalid TOML/types/names/relative paths raise SkillError. POSIX subpaths;
 #   reject absolute paths, '..' components, backslashes and NUL.
 # save_config(path: Path, specs: Mapping[str, SkillSpec]) -> None
@@ -77,13 +78,15 @@ ProgressCallback = Callable[[ProgressEvent], None]
 #   This is a library helper; sync itself never writes config.
 
 # render.py
-# render_skill(markdown: str, overrides: Mapping[str, bool]) -> str
+# render_skill(markdown: str, overrides: Mapping[str, object]) -> str
 #   Require YAML frontmatter at beginning (optional BOM), a mapping with valid
 #   name as above and nonblank string description <=1024 chars. Reject duplicate
-#   keys/malformed YAML. Only disable-model-invocation bool overrides accepted;
-#   present keys replace upstream (including False), absent keys inherit.
-#   Effective invocation field must be bool if present. Preserve body exactly
-#   and unrelated values. Applying same overrides twice is idempotent. No IO.
+#   keys/malformed YAML. Configured keys replace whole upstream fields (including
+#   False, arrays and maps); absent keys inherit. Overrides cannot change the
+#   declared name. Validate effective metadata after merge, preserving the body
+#   exactly and unrelated fields. TOML time-of-day values become ISO strings in
+#   YAML (which has no time scalar); dates/datetimes retain YAML timestamp types.
+#   Applying same overrides twice is idempotent. No IO.
 # skill_name(markdown: str) -> str
 #   Validate as render_skill(markdown, {}), return declared name.
 

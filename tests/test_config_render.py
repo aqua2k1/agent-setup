@@ -1,6 +1,8 @@
 import tomllib
+from datetime import date, datetime, time, timezone
 
 import pytest
+from ruamel.yaml import YAML
 
 from skillctl.config import load_config, save_config
 from skillctl.contracts import SkillError, SkillSpec
@@ -103,8 +105,6 @@ def test_legacy_mapping_config_is_rejected(tmp_path):
         '[[skills]]\nname = "demo"\nrepo = "/tmp/x"\npath = "a\\\\b"\n',
         '[[skills]]\nname = "demo"\nrepo = "/tmp/x"\npath = "a/./../b"\n',
         '[[skills]]\nname = "demo"\nrepo = "/tmp/x"\nref = 17\n',
-        '[[skills]]\nname = "demo"\nrepo = "/tmp/x"\nfrontmatter = { disable-model-invocation = "false" }\n',
-        '[[skills]]\nname = "demo"\nrepo = "/tmp/x"\nfrontmatter = { other = true }\n',
         '[[skills]]\nname = "demo"\nrepo = "local"\npath = "catalog/demo"\n',
         '[[skills]]\nname = "demo"\nrepo = "local"\nref = "main"\n',
     ],
@@ -114,6 +114,14 @@ def test_bad_config_is_rejected(tmp_path, text):
     path.write_text(text, encoding="utf-8")
     with pytest.raises(SkillError):
         load_config(path)
+
+
+def test_save_distinguishes_bool_from_number_in_nested_frontmatter(tmp_path):
+    path = tmp_path / "config.toml"
+    save_config(path, {"demo": SkillSpec("local", frontmatter={"value": {"flag": True}})})
+    save_config(path, {"demo": SkillSpec("local", frontmatter={"value": {"flag": 1}})})
+    assert load_config(path)["demo"].frontmatter == {"value": {"flag": 1}}
+    assert type(load_config(path)["demo"].frontmatter["value"]["flag"]) is int
 
 
 def test_render_explicit_true_false_inheritance_and_idempotence():
@@ -157,7 +165,6 @@ def test_render_missing_upstream_field_can_be_added_and_inherited():
         "---\nname: demo\ndescription: 123\n---\n",
         "---\nname: demo\ndescription: text\nname: other\n---\n",
         "---\nname: demo\ndescription: [broken\n---\n",
-        "---\nname: demo\ndescription: text\ndisable-model-invocation: 'false'\n---\n",
         "---\nname: demo\ndescription: " + "x" * 1025 + "\n---\n",
     ],
 )
@@ -168,7 +175,56 @@ def test_render_rejects_invalid_metadata(text):
         skill_name(text)
 
 
-@pytest.mark.parametrize("overrides", [{"unknown": True}, {"disable-model-invocation": "false"}])
-def test_render_rejects_invalid_overrides(overrides):
+@pytest.mark.parametrize("overrides", [{"name": "other"}, {"name": "bad_name"},
+                                       {"description": "  "}, {"description": 12},
+                                       {"description": "x" * 1025}])
+def test_render_rejects_invalid_merged_metadata(overrides):
     with pytest.raises(SkillError):
         render_skill(markdown(), overrides)
+
+
+def test_arbitrary_toml_values_roundtrip_and_render(tmp_path):
+    path = tmp_path / "config.toml"
+    path.write_text('''[[skills]]
+name = "demo"
+repo = "local"
+frontmatter = { description = "Updated", label = "text", count = 3, ratio = 1.25, enabled = false, items = [1, "two", true], settings = { inner = { mode = "new", clock = 12:30:45 } }, day = 2024-01-02, moment = 2024-01-02T03:04:05Z }
+''', encoding="utf-8")
+    overrides = load_config(path)["demo"].frontmatter
+    assert overrides["items"] == [1, "two", True]
+    assert type(overrides["count"]) is int
+    assert type(overrides["ratio"]) is float
+    assert type(overrides["enabled"]) is bool
+    assert overrides["settings"] == {"inner": {"mode": "new", "clock": time(12, 30, 45)}}
+    assert type(overrides["settings"]["inner"]["clock"]) is time
+    assert overrides["day"] == date(2024, 1, 2)
+    assert overrides["moment"] == datetime(2024, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
+    before = path.read_text(encoding="utf-8")
+    save_config(path, load_config(path))
+    assert load_config(path)["demo"].frontmatter == overrides
+    assert tomllib.loads(path.read_text(encoding="utf-8"))["skills"][0]["frontmatter"] == overrides
+    assert "frontmatter = {" in path.read_text(encoding="utf-8")
+    original = "---\nname: demo\ndescription: old\nsettings: {old: retained}\nunrelated: stay\ndisable-model-invocation: 'false'\n---\r\n# Body\r\n  exact  \r\n"
+    rendered = render_skill(original, overrides)
+    metadata = YAML(typ="safe").load(rendered.split("---", 2)[1])
+    assert metadata["settings"] == {"inner": {"mode": "new", "clock": "12:30:45"}}
+    assert metadata["description"] == "Updated"
+    assert metadata["unrelated"] == "stay"
+    assert metadata["disable-model-invocation"] == "false"
+    assert metadata["items"] == [1, "two", True]
+    assert metadata["day"] == date(2024, 1, 2)
+    assert metadata["moment"] == overrides["moment"]
+    assert rendered.endswith("---\r\n# Body\r\n  exact  \r\n")
+    assert render_skill(rendered, overrides) == rendered
+    assert render_skill(rendered, {}) == rendered
+    assert path.read_text(encoding="utf-8") == before
+
+
+def test_render_noop_and_validate_effective_description():
+    original = "---\nname: demo\ndescription: ''\ncount: 1 # user comment\n---\nbody\n"
+    rendered = render_skill(original, {"description": "fixed", "count": 1})
+    assert rendered.endswith("body\n")
+    assert render_skill(rendered, {"description": "fixed", "count": 1}) == rendered
+    same = "---\nname: demo\ndescription: valid\ncount: 1 # user comment\n---\nbody\n"
+    assert render_skill(same, {"count": 1}) == same
+    assert render_skill(same, {"count": True}) != same

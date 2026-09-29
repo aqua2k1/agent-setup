@@ -29,7 +29,7 @@ name = "pdf"
 repo = "https://github.com/acme/skills.git"
 path = "skills/pdf"  # 省略时是仓库根目录
 ref = "main"        # 可省略，默认远端 HEAD；也支持 tag / commit
-frontmatter = { disable-model-invocation = true }
+frontmatter = { disable-model-invocation = true, category = "documents", priority = 2 }
 ```
 
 编辑配置，然后运行 `skillctl sync`：
@@ -43,13 +43,9 @@ frontmatter = { disable-model-invocation = true }
 
 每个 `[[skills]]` 条目必须有唯一的 `name`，并与对应 `SKILL.md` 的 `name` 相同，例如 `math-modeling`。重复名称、缺失名称或旧的 `[skills.<name>]` 格式会报错，不执行同步。来源支持 HTTPS、SSH URL、SCP 风格 SSH 地址和绝对本地 Git 仓库路径。
 
-`disable-model-invocation`：
+`frontmatter` 支持任意 TOML 键和值（字符串、数字、布尔值、数组、嵌套表及日期/时间）。配置中的键会整体替换 `SKILL.md` 对应的 YAML 字段（嵌套表不作深度合并），未配置的键保留上游值。例如 `disable-model-invocation = true` 禁止自动选择，`false` 显式允许；删除覆盖键则继承上游值。TOML 的纯时间值在 YAML 中写为 ISO 格式字符串；日期和日期时间保留为 YAML 日期/时间戳。覆盖不能改变 skill 的 `name`，合并后的 `name` 和 `description` 仍须有效。
 
-- `true`：禁止自动选择，仍可通过 `/skill:pdf` 显式调用。
-- `false`：显式允许自动选择。
-- 删除该覆盖键：继承上游。
-
-字段设置仅通过配置文件修改，不直接编辑远程 skill 的安装副本。同步后在 Pi 执行 `/reload`。该字段不是文件访问权限控制。
+字段设置仅通过配置文件修改，不直接编辑远程 skill 的安装副本。同步后在 Pi 执行 `/reload`。`disable-model-invocation` 不是文件访问权限控制。
 
 ## 自建 skill
 

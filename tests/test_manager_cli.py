@@ -7,6 +7,7 @@ import subprocess
 import sys
 
 import pytest
+from ruamel.yaml import YAML
 
 from skillctl.cli import main
 from skillctl.config import save_config
@@ -75,6 +76,36 @@ def test_sync_refreshes_source_and_reapplies_true_false_and_inheritance(reposito
     assert "NEW REVISION" in (target / "SKILL.md").read_text(encoding="utf-8")
     assert state(home)["skills"]["demo"] == {"commit": revision, "hash": tree_hash(target)}
     assert (home / "config.toml").read_bytes() == before_config
+
+
+def test_sync_arbitrary_config_frontmatter_and_name_safety(repository, tmp_path):
+    home = tmp_path / "home"
+    target = home / "skills" / "demo" / "SKILL.md"
+    config = home / "config.toml"
+    config.parent.mkdir(parents=True)
+    config.write_text(
+        f'[[skills]]\nname = "demo"\nrepo = "{repository}"\npath = "catalog/demo"\n'
+        'frontmatter = { description = "configured", count = 8, active = false, '
+        'tags = ["one", "two"], settings = { nested = { key = "value", at = 10:11:12 } } }\n',
+        encoding="utf-8",
+    )
+    before = config.read_bytes()
+    assert sync(home).errors == {}
+    rendered = target.read_text(encoding="utf-8")
+    metadata = YAML(typ="safe").load(rendered.split("---", 2)[1])
+    assert metadata["description"] == "configured"
+    assert metadata["settings"] == {"nested": {"key": "value", "at": "10:11:12"}}
+    assert metadata["tags"] == ["one", "two"]
+    assert metadata["count"] == 8 and metadata["active"] is False
+    assert rendered.endswith("# Instructions\nKeep this body.\n")
+    assert sync(home).errors == {}
+    assert target.read_text(encoding="utf-8") == rendered
+    assert config.read_bytes() == before
+    config.write_text(config.read_text(encoding="utf-8").replace(
+        'description = "configured"', 'name = "other", description = "configured"'), encoding="utf-8")
+    result = sync(home)
+    assert "demo" in result.errors
+    assert target.read_text(encoding="utf-8") == rendered
 
 
 def test_sync_config_deletion_removes_only_tracked_skills(repository, tmp_path):
